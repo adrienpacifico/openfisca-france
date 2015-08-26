@@ -1,0 +1,34 @@
+- name: "Points de charge CNOUS"
+  description: Points de charge CNOUS
+  period: "2014"
+  absolute_error_margin: 0.03
+  familles:
+    parents: ["parent1", "parent2"]
+    enfants: ["enfant1", "enfant2", "enfant3"]
+  foyers_fiscaux:
+    declarants: ["parent1", "parent2"]
+    personnes_a_charge: ["enfant1", "enfant2", "enfant3"]
+  menages:
+    personne_de_reference: "parent1"
+    conjoint: "parent2"
+    enfants: ["enfant1", "enfant2", "enfant3"]
+  individus:
+    - id: "parent1"
+      age: 40
+    - id: "parent2"
+      age: 40
+    - id: "enfant1"
+      age: 18
+    - id: "enfant2"
+      age: 18
+    - id: "enfant3"
+      age: 9
+
+  output_variables:
+    points_de_charge:
+      2014:
+        - 6
+        - 6
+        - 6
+        - 6
+        - 6

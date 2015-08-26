@@ -87,6 +87,10 @@ from prestations.prestations_familiales import (  # noqa analysis:ignore
     cf,
     )
 
+from prestations.prestations_etudiantes import (  # noqa analysis:ignore
+    CNOUS3,
+    )
+
 from revenus import autres
 
 from revenus.activite import (  # noqa analysis:ignore

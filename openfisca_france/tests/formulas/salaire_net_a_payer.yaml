@@ -1,0 +1,16 @@
+- name: "Différent de salaire_de_base"
+  period: 2015-03
+  input_variables:
+    salaire_de_base: 100
+  output_variables:
+    sali: 0
+    salaire_net_a_payer: 0 # TODO: connais pas la valeur exacte, mais supposée > 0
+    salaire_net: 0 # TODO: connais pas la valeur exacte, mais supposée > 0
+  period: 2015-03
+  input_variables:
+    salaire_de_base: 100
+  output_variables:
+    sali: 0
+    salaire_net_a_payer: 0 # TODO: connais pas la valeur exacte, mais supposée > 0
+    salaire_net: 0 # TODO: connais pas la valeur exacte, mais supposée > 0
+

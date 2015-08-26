@@ -1,0 +1,147 @@
+# -*- coding: utf-8 -*-
+
+
+# OpenFisca -- A versatile microsimulation software
+# By: OpenFisca Team <contact@openfisca.fr>
+#
+# Copyright (C) 2011, 2012, 2013, 2014 OpenFisca Team
+# https://github.com/openfisca
+#
+# This file is part of OpenFisca.
+#
+# OpenFisca is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# OpenFisca is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+from __future__ import division
+
+"""
+!!!Work in progress, not reliable!!!
+
+This file takes into account some Cnous subsidies.
+Cnous is an organism that is in change of student's grants (Centre national des œuvres universitaires et scolaires)
+
+Official simulator for student's grants can be found at: http://www.cnous.fr/bourses/simulateur/
+
+legislation : http://www.enseignementsup-recherche.gouv.fr/pid20536/bulletin-officiel.html?cid_bo=81151&cbo=1
+"""
+
+
+
+
+
+
+
+
+
+def _div_ms(self, f3vc_holder, f3ve_holder, f3vg_holder, f3vl_holder, f3vm_holder):
+    f3vc = self.cast_from_entity_to_role(f3vc_holder, role = VOUS)
+
+
+
+
+
+def pts_de_charge(distance_foy_etude, nb_enf_charge):
+    pts_de_charge = 0
+
+#distance lieu d'étude
+    if distance_foy_etude > 249:
+        pts_de_charge = 2
+    elif distance_foy_etude >= 30:
+        pts_de_charge = 1
+
+#children in the household  : chaque enfant à charge à l'exception du cadidat boursier compte pour 2 points
+    pts_de_charge = pts_de_charge + ((nb_enf_charge - 1) * 2)
+#S'ils sont étudiants ils comptent pour 2 pts suplémentaire
+    pts_de_charge = pts_de_charge + ((nb_enf_charge_enseignementsup - 1) * 2)
+    print(pts_de_charge)
+    return pts_de_charge
+
+
+def echelon_bourse_etudiant(pts_de_charge, sali):
+# Approximation test (but good approximation at 50 euros yearly income precision )
+#   http://www.legifrance.gouv.fr/affichTexte.do;jsessionid=?cidTexte=JORFTEXT000029374760&dateTexte=&oldAction=dernierJO&categorieLien=id
+    if sali < (pts_de_charge + 1) * 250:
+        echelon_bourse_etudiant = 7
+    elif sali < (pts_de_charge) * 840 + 7540:
+        echelon_bourse_etudiant = 6
+    elif sali < (pts_de_charge) * 1330 + 11950:
+        echelon_bourse_etudiant = 5
+    elif sali < (pts_de_charge) * 1560 + 13990:
+        echelon_bourse_etudiant = 4
+    elif sali < (pts_de_charge) * 1790 + 16070:
+        echelon_bourse_etudiant = 3
+    elif sali < (pts_de_charge) * 2020 + 18190:
+        echelon_bourse_etudiant = 2
+    elif sali < (pts_de_charge) * 2490 + 22500:
+        echelon_bourse_etudiant = 1
+    elif sali < (pts_de_charge)* 3400 + 31000:
+        echelon_bourse_etudiant = 0.5 #echelon 0 bis
+    elif sali < (pts_de_charge)* 3680 + 33100:
+        echelon_bourse_etudiant = 0
+    else:
+        echelon_bourse_etudiant = -1
+
+    print(echelon_bourse_etudiant)
+    return echelon_bourse_etudiant
+
+
+def montant_bourse_etudiant(echelon_bourse_etudiant):
+    if echelon_bourse_etudiant == 7:
+        montant_bourse_etudiant = 5539
+    elif echelon_bourse_etudiant == 6:
+        montant_bourse_etudiant = 4768
+    elif echelon_bourse_etudiant == 5:
+        montant_bourse_etudiant = 4496
+    elif echelon_bourse_etudiant == 4:
+        montant_bourse_etudiant = 3916
+    elif echelon_bourse_etudiant == 3:
+        montant_bourse_etudiant = 3212
+    elif echelon_bourse_etudiant == 2:
+        montant_bourse_etudiant = 2507
+    elif echelon_bourse_etudiant == 1:
+        montant_bourse_etudiant = 1665
+    elif echelon_bourse_etudiant == 0.5:
+        montant_bourse_etudiant = 1007
+    elif echelon_bourse_etudiant == 0:
+        montant_bourse_etudiant = 0
+    else:
+        montant_bourse_etudiant = 0
+    print(montant_bourse_etudiant)
+    return montant_bourse_etudiant
+
+def eligibilite_bourse_etu():
+
+
+##TODO : condition de maintient (semestre réussite, au dela du master, etc )
+    if nb_year_of_bourse_etu > 7:
+            montant_bourse_etudiant = 0
+
+def boursier():
+    if  echelon_bourse_etudiant <> nan:
+         return 0
+
+    if echelon_bourse_etudiant > 0 :
+        return 1
+
+
+if __name__ == "__main__":
+    sali = 37400
+    distance_foy_etude = 456
+
+#    nb_enf_charge = nbJ + nbF
+    nb_enf_charge = 5 + 1
+
+    nb_enf_charge_enseignementsup = 2 + 1  #f7ef ?
+    pts_de_charge = pts_de_charge(distance_foy_etude, nb_enf_charge)
+    echelon_bourse_etudiant = echelon_bourse_etudiant(pts_de_charge, sali)
+    montant_bourse_etudiant(echelon_bourse_etudiant)

@@ -1,0 +1,164 @@
+# -*- coding: utf-8 -*-
+
+
+# OpenFisca -- A versatile microsimulation software
+# By: OpenFisca Team <contact@openfisca.fr>
+#
+# Copyright (C) 2011, 2012, 2013, 2014, 2015 OpenFisca Team
+# https://github.com/openfisca
+#
+# This file is part of OpenFisca.
+#
+# OpenFisca is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# OpenFisca is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+from __future__ import division
+
+import copy
+import logging
+
+from numpy import maximum as max_
+from openfisca_core import columns, formulas, reforms
+
+from .. import entities
+from ..model.base import QUIFOY
+from ..model.prelevements_obligatoires.impot_revenu import ir
+
+
+log = logging.getLogger(__name__)
+
+
+def build_reform(tax_benefit_system):
+    reform_legislation_subtree = {
+        "@type": "Node",
+        "description": "Intégration au revenu imposable des allocations familiales",
+        "children": {
+            "imposition": {
+                "@type": "Parameter",
+                "description": "Indicatrice d'imposition",
+                "format": "boolean",
+                "values": [{'start': u'2000-01-01', 'stop': u'2014-12-31', 'value': True}],
+                },
+            },
+        }
+    reform_legislation_json = copy.deepcopy(tax_benefit_system.legislation_json)
+    reform_legislation_json['children']['allocations_familiales_imposables'] = reform_legislation_subtree
+    # This validates the modified legislation JSON. But the operation is slow so it is commented. Use in development.
+    # from openfisca_core import conv, legislations
+    # conv.check(legislations.validate_legislation_json)(reform_legislation_json)
+
+    Reform = reforms.make_reform(
+        legislation_json = reform_legislation_json,
+        name = u'Allocations familiales imposables',
+        reference = tax_benefit_system,
+        )
+
+    @Reform.formula
+    class rbg(formulas.SimpleFormulaColumn):
+        label = u"Nouveau revenu brut global intégrant les allocations familiales"
+        reference = ir.rbg
+
+        def function(self, simulation, period):
+            period = period.start.offset('first-of', 'year').period('year')
+            allocations_familiales_imposables = simulation.calculate_add('allocations_familiales_imposables', period)
+            deficit_ante = simulation.calculate('deficit_ante', period)
+            f6gh = simulation.calculate('f6gh', period)
+            nacc_pvce_holder = simulation.calculate('nacc_pvce', period)
+            nbic_impm_holder = simulation.calculate('nbic_impm', period)
+            rev_cat = simulation.calculate('rev_cat', period)
+            cga = simulation.legislation_at(period.start).ir.rpns.cga_taux2
+
+            nacc_pvce = self.sum_by_entity(nacc_pvce_holder)
+            return period, max_(
+                0,
+                allocations_familiales_imposables + rev_cat + f6gh +
+                (self.sum_by_entity(nbic_impm_holder) + nacc_pvce) * (1 + cga) - deficit_ante
+                )
+
+    @Reform.formula
+    class rfr(formulas.SimpleFormulaColumn):
+        label = u"Nouveau revenu fiscal de référence intégrant les allocations familiales"
+        reference = ir.rfr
+
+        def function(self, simulation, period):
+            period = period.start.offset('first-of', 'year').period('year')
+
+            allocations_familiales_imposables = simulation.calculate('allocations_familiales_imposables')
+            f3va_holder = simulation.calculate('f3va')
+            f3vi_holder = simulation.calculate('f3vi')
+            f3vz = simulation.calculate('f3vz')
+            rfr_cd = simulation.calculate('rfr_cd')
+            rfr_rvcm = simulation.calculate('rfr_rvcm')
+            rni = simulation.calculate('rni')
+            rpns_exon_holder = simulation.calculate('rpns_exon')
+            rpns_pvce_holder = simulation.calculate('rpns_pvce')
+            rev_cap_lib = simulation.calculate_add('rev_cap_lib')
+            microentreprise = simulation.calculate('microentreprise')
+
+            f3va = self.sum_by_entity(f3va_holder)
+            f3vi = self.sum_by_entity(f3vi_holder)
+            rpns_exon = self.sum_by_entity(rpns_exon_holder)
+            rpns_pvce = self.sum_by_entity(rpns_pvce_holder)
+
+            return period, (
+                max_(0, rni - allocations_familiales_imposables) +
+                rfr_cd + rfr_rvcm + rev_cap_lib + f3vi + rpns_exon + rpns_pvce + f3va + f3vz + microentreprise
+                )
+
+    @Reform.formula
+    class rsa_i(formulas.SimpleFormulaColumn):
+        column = columns.FloatCol
+        entity_class = entities.FoyersFiscaux
+        label = u"Allocations familiales imposables"
+    
+    def function(self, simulation, period):
+        period = period.start.offset('first-of', 'month').period('month')
+        #three_previous_months = period.start.period('month', 3).offset(-3)
+        last_month = period.start.period('month', 1).offset(-1) #prend le mois précédent pour calculer le rsa
+    
+        def calcule_type_ressource(variable_name, neutralisable = False):
+            #ressource_trois_derniers_mois = simulation.calculate_add(variable_name, three_previous_months)
+            ressource_dernier_mois = simulation.calculate_add(variable_name, last_month)
+            if neutralisable:
+                ressource_mois_courant = simulation.calculate(variable_name, period)
+                #return (ressource_trois_derniers_mois > 0) * ressource_trois_derniers_mois
+                        (ressource_mois_courant > 0) * ressource_trois_derniers_mois
+            else:
+                return ressource_dernier_mois #ressource_trois_derniers_mois
+    
+        # Ressources neutralisables
+        salaire_net = calcule_type_ressource('salaire_net', neutralisable = True)
+        indemnites_chomage_partiel = calcule_type_ressource('indemnites_chomage_partiel', neutralisable = True)
+        #plein de suppressions....
+    
+        # Autres ressources
+        hsup = calcule_type_ressource('hsup')
+        etr = calcule_type_ressource('etr')
+    
+        # Ressources TNS
+    
+        # WARNING : D'après les caisses, le revenu pris en compte pour les AE pour le RSA ne prend en compte que l'abattement
+        # standard sur le CA, mais pas les cotisations pour charges sociales. Dans l'attente d'une éventuelle correction, nous
+        # implémentons selon leurs instructions. Si changement, il suffira de remplacer le tns_auto_entrepreneur_benefice par
+        # tns_auto_entrepreneur_revenus_net
+    
+    
+        return period, (
+            salaire_net + hsup + etr + indemnites_chomage_partiel + indemnites_journalieres_maternite +
+            indemnites_journalieres_paternite + indemnites_journalieres_adoption + indemnites_journalieres_maladie +
+            indemnites_journalieres_accident_travail + indemnites_journalieres_maladie_professionnelle +
+            indemnites_volontariat + revenus_stage_formation_pro + indemnites_stage + bourse_recherche + tns_total_revenus_pour_rsa
+        ) / 3
+
+    return Reform()

@@ -26,17 +26,11 @@
 from __future__ import division
 
 from numpy import maximum as max_
-from openfisca_core import columns, formulas, reforms
+from openfisca_core import columns, formulas, reforms, periods
 from collections import OrderedDict
 
 from ...model.prelevements_obligatoires.impot_revenu import ir
 
-def modify_legislation_json(reference_legislation_json_copy):
-    reference_legislation_json_copy['children']['ir']['children']['bareme']['brackets'][1]['threshold'][0] =\
-        [OrderedDict([('start_line_number', 2119), ('start', u'2014-01-01'), ('stop', u'2014-12-31'), ('value', 9690.0)])]
-    reference_legislation_json_copy['children']['ir']['children']['bareme']['brackets'][1]['rate'] =\
-        [OrderedDict([('start_line_number', 2125), ('start', u'2014-01-01'), ('stop', u'2014-12-31'), ('value', 0.14)])]
-    return reference_legislation_json_copy
 
 def build_reform(tax_benefit_system):
     Reform = reforms.make_reform(
@@ -45,6 +39,26 @@ def build_reform(tax_benefit_system):
         reference = tax_benefit_system,
         )
 
+    reform_year = 2016
+    reform_period = periods.period('year', reform_year)
+    # FIXME update_legislation is deprecated.
+    reference_legislation_json_copy = reforms.update_legislation(
+        legislation_json = tax_benefit_system.legislation_json,
+        path = ('children', 'ir', 'children', 'bareme', 'brackets', 1, 'rate'),
+        period = reform_period,
+        value = 0.16,
+        )
+    # FIXME update_legislation is deprecated.
+    reference_legislation_json_copy = reforms.update_legislation(
+        legislation_json = reference_legislation_json_copy,
+        path = ('children', 'ir', 'children', 'bareme', 'brackets', 1, 'threshold'),
+        period = reform_period,
+        value = 17800,
+        )
+    reference_legislation_json_copy['children']['plf2015'] = reform_legislation_subtree
+    return reference_legislation_json_copy
+    
+    
     @Reform.formula
     class decote(formulas.DatedFormulaColumn):
         label = u"Suppression décote"
@@ -54,7 +68,5 @@ def build_reform(tax_benefit_system):
             return period, 0
             
     reform = Reform()
-    reform.modify_legislation_json(modifier_function = modify_legislation_json)
+    reform.modify_legislation_json(modifier_function = reference_legislation_json_copy)
     return reform
-
-

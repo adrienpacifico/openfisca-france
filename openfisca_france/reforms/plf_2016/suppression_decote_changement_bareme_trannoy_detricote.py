@@ -25,48 +25,53 @@
 
 from __future__ import division
 
-from numpy import maximum as max_
-from openfisca_core import columns, formulas, reforms, periods
-from collections import OrderedDict
-
+from openfisca_core import formulas, periods, reforms
+from ...model.base import *
 from ...model.prelevements_obligatoires.impot_revenu import ir
 
 
 def build_reform(tax_benefit_system):
     Reform = reforms.make_reform(
-        key = 'trannoy_detricote_la_decote',
-        name = u'Trannoy détricote la décote',
+        key = 'plf2015',
+        name = u'Projet de Loi de Finances 2015 appliquée aux revenus 2013',
         reference = tax_benefit_system,
         )
 
-    reform_year = 2016
-    reform_period = periods.period('year', reform_year)
-    # FIXME update_legislation is deprecated.
-    reference_legislation_json_copy = reforms.update_legislation(
-        legislation_json = tax_benefit_system.legislation_json,
-        path = ('children', 'ir', 'children', 'bareme', 'brackets', 1, 'rate'),
-        period = reform_period,
-        value = 0.16,
-        )
-    # FIXME update_legislation is deprecated.
-    reference_legislation_json_copy = reforms.update_legislation(
-        legislation_json = reference_legislation_json_copy,
-        path = ('children', 'ir', 'children', 'bareme', 'brackets', 1, 'threshold'),
-        period = reform_period,
-        value = 17800,
-        )
-    reference_legislation_json_copy['children']['plf2015'] = reform_legislation_subtree
-    return reference_legislation_json_copy
-    
-    
     @Reform.formula
     class decote(formulas.DatedFormulaColumn):
         label = u"Suppression décote"
-        reference = ir.rbg
-        def function(self, simulation, period):
+        reference = ir.decote
+
+        @dated_function(start = date(2015, 1, 1), stop = date(2015, 12, 31) )
+        def function_2013(self, simulation, period):
             period = period.start.offset('first-of', 'year').period('year')
-            return period, 0
-            
+            ir_plaf_qf = simulation.calculate('ir_plaf_qf', period)
+
+
+            return period, 0 *ir_plaf_qf
+
     reform = Reform()
-    reform.modify_legislation_json(modifier_function = reference_legislation_json_copy)
+    reform.modify_legislation_json(modifier_function = modify_legislation_json)
     return reform
+
+
+#def modify_legislation_json(reference_legislation_json_copy):
+#
+#    reform_year = 2015
+#    reform_period = periods.period('year', reform_year)
+#    # FIXME update_legislation is deprecated.
+#    reference_legislation_json_copy = reforms.update_legislation(
+#        legislation_json = reference_legislation_json_copy,
+#        path = ('children', 'ir', 'children', 'bareme', 'brackets', 1, 'rate'),
+#        period = reform_period,
+#        value = 0.26,
+#        )
+#    reference_legislation_json_copy = reforms.update_legislation(
+#        legislation_json = reference_legislation_json_copy,
+#        path = ('children', 'ir', 'children', 'bareme', 'brackets', 1, 'threshold'),
+#        period = reform_period,
+#        value = 17800,
+#        )
+#    # FIXME update_legislation is deprecated.
+#
+#    return reference_legislation_json_copy

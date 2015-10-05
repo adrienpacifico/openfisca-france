@@ -36,26 +36,7 @@ def build_reform(tax_benefit_system):
 
 
 def modify_legislation_json(reference_legislation_json_copy):
-    reform_legislation_subtree = {
-        "@type": "Node",
-        "description": "PLF 2015 sur revenus 2013",
-        "children": {
-            "decote_seuil_celib": {
-                "@type": "Parameter",
-                "description": "Seuil de la décôte pour un célibataire",
-                "format": "integer",
-                "unit": "currency",
-                "values": [{'start': u'2013-01-01', 'stop': u'2013-12-31', 'value': 1135}],
-                },
-            "decote_seuil_couple": {
-                "@type": "Parameter",
-                "description": "Seuil de la décôte pour un couple",
-                "format": "integer",
-                "unit": "currency",
-                "values": [{'start': u'2013-01-01', 'stop': u'2013-12-31', 'value': 1870}],
-                },
-            },
-        }
+
     reform_year = 2013
     reform_period = periods.period('year', reform_year)
     # FIXME update_legislation is deprecated.
@@ -72,5 +53,4 @@ def modify_legislation_json(reference_legislation_json_copy):
         period = reform_period,
         value = 9690,
         )
-    reference_legislation_json_copy['children']['plf2015'] = reform_legislation_subtree
     return reference_legislation_json_copy

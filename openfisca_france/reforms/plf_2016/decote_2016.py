@@ -20,12 +20,12 @@ def build_reform(tax_benefit_system):
         reference = ir.decote
 
         @dated_function(start = date(2015, 1, 1), stop = date(2016, 12, 31) )
-        def function_2013(self, simulation, period):
+        def function_2015(self, simulation, period):
             period = period.start.offset('first-of', 'year').period('year')
             ir_plaf_qf = simulation.calculate('ir_plaf_qf', period)
             nb_adult = simulation.calculate('nb_adult', period)
             plf = simulation.legislation_at(period.start).plf2015
-
+            print 'hello'
             decote_celib = (ir_plaf_qf < plf.decote_seuil_celib) * (plf.decote_seuil_celib - ir_plaf_qf)
             decote_couple = (ir_plaf_qf < plf.decote_seuil_couple) * (plf.decote_seuil_couple - ir_plaf_qf)
             return period, ((nb_adult == 1) * decote_celib + (nb_adult == 2) * decote_couple) * 0.75

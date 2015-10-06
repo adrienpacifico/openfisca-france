@@ -38,7 +38,7 @@ def build_reform(tax_benefit_system):
 def modify_legislation_json(reference_legislation_json_copy):
     reform_legislation_subtree = {
         "@type": "Node",
-        "description": "PLF 2015 sur revenus 2013",
+        "description": "PLF 2016 sur revenus 2015",
         "children": {
             "decote_seuil_celib": {
                 "@type": "Parameter",

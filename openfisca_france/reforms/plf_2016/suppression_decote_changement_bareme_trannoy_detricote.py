@@ -1,28 +1,5 @@
 # -*- coding: utf-8 -*-
 
-
-# OpenFisca -- A versatile microsimulation software
-# By: OpenFisca Team <contact@openfisca.fr>
-#
-# Copyright (C) 2011, 2012, 2013, 2014, 2015 OpenFisca Team
-# https://github.com/openfisca
-#
-# This file is part of OpenFisca.
-#
-# OpenFisca is free software; you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as
-# published by the Free Software Foundation, either version 3 of the
-# License, or (at your option) any later version.
-#
-# OpenFisca is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Affero General Public License for more details.
-#
-# You should have received a copy of the GNU Affero General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-
 from __future__ import division
 
 from openfisca_core import formulas, periods, reforms
@@ -30,10 +7,33 @@ from ...model.base import *
 from ...model.prelevements_obligatoires.impot_revenu import ir
 
 
+
+
+def modify_legislation_json(reference_legislation_json_copy):
+
+    reform_year = 2015
+    reform_period = periods.period('year', reform_year)
+    # FIXME update_legislation is deprecated.
+    reference_legislation_json_copy = reforms.update_legislation(
+        legislation_json = reference_legislation_json_copy,
+        path = ('children', 'ir', 'children', 'bareme', 'brackets', 1, 'rate'),
+        period = reform_period,
+        value = 0.16,
+        )
+    reference_legislation_json_copy = reforms.update_legislation(
+        legislation_json = reference_legislation_json_copy,
+        path = ('children', 'ir', 'children', 'bareme', 'brackets', 1, 'threshold'),
+        period = reform_period,
+        value = 17800,#17800
+        )
+    # FIXME update_legislation is deprecated.
+
+    return reference_legislation_json_copy
+
 def build_reform(tax_benefit_system):
     Reform = reforms.make_reform(
-        key = 'plf2015',
-        name = u'Projet de Loi de Finances 2015 appliquée aux revenus 2013',
+        key = 'plf_2016',
+        name = u'Proposition de reforme Trannoy',
         reference = tax_benefit_system,
         )
 
@@ -53,25 +53,3 @@ def build_reform(tax_benefit_system):
     reform = Reform()
     reform.modify_legislation_json(modifier_function = modify_legislation_json)
     return reform
-
-
-#def modify_legislation_json(reference_legislation_json_copy):
-#
-#    reform_year = 2015
-#    reform_period = periods.period('year', reform_year)
-#    # FIXME update_legislation is deprecated.
-#    reference_legislation_json_copy = reforms.update_legislation(
-#        legislation_json = reference_legislation_json_copy,
-#        path = ('children', 'ir', 'children', 'bareme', 'brackets', 1, 'rate'),
-#        period = reform_period,
-#        value = 0.26,
-#        )
-#    reference_legislation_json_copy = reforms.update_legislation(
-#        legislation_json = reference_legislation_json_copy,
-#        path = ('children', 'ir', 'children', 'bareme', 'brackets', 1, 'threshold'),
-#        period = reform_period,
-#        value = 17800,
-#        )
-#    # FIXME update_legislation is deprecated.
-#
-#    return reference_legislation_json_copy

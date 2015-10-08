@@ -4,6 +4,8 @@ from __future__ import division
 
 import datetime
 
+
+from openfisca_core import periods
 from openfisca_france.model.base import CAT
 from openfisca_france.tests import base
 
@@ -37,9 +39,32 @@ def test():
         yield check_run, simulation, period
 
 
+def test_single_entity():
+    year = 2015
+    scenario = base.tax_benefit_system.new_scenario().init_single_entity(
+        period = periods.period('year', year),
+        parent1 = dict(
+            birth = datetime.date(year - 40, 1, 1),
+            salaire_imposable = 3800 * 12,
+            statmarit = 1,
+            ),
+        parent2 = dict(
+            birth = datetime.date(year - 40, 1, 1)
+            statmarit = 1,
+            ),
+        enfants = [
+            dict(birth = datetime.date(year - 10, 1, 1)),
+            dict(birth = datetime.date(year - 9, 1, 1)),
+            ],
+        )
+    simulation = scenario.new_simulation(debug = True)
+    assert simulation.calculate('nbptr') == 3
+
+
+
 if __name__ == '__main__':
     import logging
     import sys
-
+    test_single_entity()
     logging.basicConfig(level = logging.ERROR, stream = sys.stdout)
     test()

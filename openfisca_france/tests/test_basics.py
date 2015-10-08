@@ -49,7 +49,7 @@ def test_single_entity():
             statmarit = 1,
             ),
         parent2 = dict(
-            birth = datetime.date(year - 40, 1, 1)
+            birth = datetime.date(year - 40, 1, 1),
             statmarit = 1,
             ),
         enfants = [

@@ -2117,13 +2117,13 @@
           <VALUE deb="2010-01-01" fin="2012-12-31" valeur="5963" />
           <VALUE deb="2013-01-01" fin="2013-12-31" valeur="6011" />
           <VALUE deb="2014-01-01" fin="2014-12-31" valeur="9690" />
-          <VALUE deb="2015-01-01" fin="2015-12-31" valeur="9700" />
+          <VALUE deb="2015-01-01" fin="2015-12-31" valeur="13750" />
         </SEUIL>
         <TAUX>
           <VALUE deb="2001-01-01" fin="2002-12-31" valeur="0.0705" />
           <VALUE deb="2003-01-01" fin="2005-12-31" valeur="0.0683" />
           <VALUE deb="2006-01-01" fin="2013-12-31" valeur="0.055" />
-          <VALUE deb="2014-01-01" fin="2015-12-31" valeur="0.14" />
+          <VALUE deb="2014-01-01" fin="2015-12-31" valeur="0.16" />
         </TAUX>
       </TRANCHE>
       <TRANCHE code="tranche2">

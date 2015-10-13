@@ -1240,13 +1240,9 @@ class decote(DatedFormulaColumn):
     def function_2015(self, simulation, period):
         period = period.start.offset('first-of', 'year').period('year')
         ir_plaf_qf = simulation.calculate('ir_plaf_qf', period)
-        nb_adult = simulation.calculate('nb_adult', period)
-        decote_seuil_celib = simulation.legislation_at(period.start).ir.decote_seuil_celib.seuil
-        decote_seuil_couple = simulation.legislation_at(period.start).ir.decote_seuil_couple.seuil
-        decote_celib = (ir_plaf_qf < decote_seuil_celib) * (decote_seuil_celib - .75 * ir_plaf_qf)
-        decote_couple = (ir_plaf_qf < decote_seuil_couple) * (decote_seuil_couple - .75 * ir_plaf_qf)
 
-        return period, (nb_adult == 1) * decote_celib + (nb_adult == 2) * decote_couple
+
+        return period,  ir_plaf_qf * 0
 
     @dated_function(start = date(2014, 1, 1), stop = date(2014, 12, 31))
     def function_2014(self, simulation, period):

@@ -2792,14 +2792,14 @@
     </NODE>
     <NODE code="decote_seuil_celib" description="Décote">
       <CODE code="seuil" description="Seuil de la décôte pour un célibataire" format="integer" type="monetary">
-        <VALUE deb="2015-01-01" fin="2015-12-31" valeur="1165" />
         <VALUE deb="2014-01-01" fin="2014-12-31" valeur="1135" />
+        <VALUE deb="2015-01-01" fin="2015-12-31" valeur="1165" />
       </CODE>
     </NODE>
     <NODE code="decote_seuil_couple" description="Décote">
       <CODE code="seuil" description="Seuil de la décôte pour un couple" format="integer" type="monetary">
-        <VALUE deb="2015-01-01" fin="2015-12-31" valeur="1920" />
         <VALUE deb="2014-01-01" fin="2014-12-31" valeur="1870" />
+        <VALUE deb="2015-01-01" fin="2015-12-31" valeur="1920" />
       </CODE>
     </NODE>
     <NODE code="reductions_impots" description="Réduction d'impôt">

@@ -1253,7 +1253,7 @@ class decote(DatedFormulaColumn):
         decote_seuil_couple = simulation.legislation_at(period.start).ir.decote.seuil_couple
         decote_celib = (ir_plaf_qf < decote_seuil_celib) * (decote_seuil_celib - ir_plaf_qf)
         decote_couple = (ir_plaf_qf < decote_seuil_couple) * (decote_seuil_couple - ir_plaf_qf)
-
+        print decote_seuil_couple - ir_plaf_qf
         return period, (nb_adult == 1) * decote_celib + (nb_adult == 2) * decote_couple
 
 

@@ -1255,9 +1255,9 @@ class decote(DatedFormulaColumn):
         decote_couple = (ir_plaf_qf < decote_seuil_couple) * (decote_seuil_couple - ir_plaf_qf)
         coefficient_decote = 1 #simulation.legislation_at(period.start).ir.decote.seuil_celib
         decote = max(0, decote_seuil_celib - (ir_plaf_qf * coefficient_decote)) * (nb_adult == 1)\
-                + max(0, decote_seuil_celib - (ir_plaf_qf * coefficient_decote)) * (nb_adult == 2)
-        print 'ir_plaf_qf' , ir_plaf_qf
-        print 'decote',decote
+                + max(0, decote_seuil_couple - (ir_plaf_qf * coefficient_decote)) * (nb_adult == 2)
+        #print 'ir_plaf_qf' , ir_plaf_qf
+       # print 'decote',decote
         return period, decote
 
 
@@ -1277,6 +1277,9 @@ class decote_gain_fiscal(SimpleFormulaColumn):
         ir_plaf_qf = simulation.calculate('ir_plaf_qf', period)
         ip_post_decote = max_(0,ir_plaf_qf - decote)
         assert (ir_plaf_qf - ip_post_decote) == min_(decote, ir_plaf_qf)
+        a =  str(simulation.legislation_at(period.start).ir.bareme)
+        import ipdb
+        ipdb.set_trace( )
         return period, (ir_plaf_qf - ip_post_decote)
 
 

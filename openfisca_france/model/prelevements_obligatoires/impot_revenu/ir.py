@@ -1253,8 +1253,12 @@ class decote(DatedFormulaColumn):
         decote_seuil_couple = simulation.legislation_at(period.start).ir.decote.seuil_couple
         decote_celib = (ir_plaf_qf < decote_seuil_celib) * (decote_seuil_celib - ir_plaf_qf)
         decote_couple = (ir_plaf_qf < decote_seuil_couple) * (decote_seuil_couple - ir_plaf_qf)
-
-        return period, (nb_adult == 1) * decote_celib + (nb_adult == 2) * decote_couple
+        coefficient_decote = 1 #simulation.legislation_at(period.start).ir.decote.seuil_celib
+        decote = max(0, decote_seuil_celib - (ir_plaf_qf * coefficient_decote)) * (nb_adult == 1)\
+                + max(0, decote_seuil_celib - (ir_plaf_qf * coefficient_decote)) * (nb_adult == 2)
+        print 'ir_plaf_qf' , ir_plaf_qf
+        print 'decote',decote
+        return period, decote
 
 
 @reference_formula
@@ -1271,8 +1275,9 @@ class decote_gain_fiscal(SimpleFormulaColumn):
         period = period.start.offset('first-of', 'year').period('year')
         decote = simulation.calculate('decote', period)
         ir_plaf_qf = simulation.calculate('ir_plaf_qf', period)
-
-        return period, min_(decote, ir_plaf_qf)
+        ip_post_decote = max_(0,ir_plaf_qf - decote)
+        assert (ir_plaf_qf - ip_post_decote) == min_(decote, ir_plaf_qf)
+        return period, (ir_plaf_qf - ip_post_decote)
 
 
 @reference_formula
@@ -1310,8 +1315,9 @@ class ip_net(SimpleFormulaColumn):
         cncn_info_holder = simulation.compute('cncn_info', period)
         decote = simulation.calculate('decote', period)
         taux = simulation.legislation_at(period.start).ir.rpns.taux16
+        ip_post_decote = max_(0,ir_plaf_qf - decote)
 
-        return period, max_(0, ir_plaf_qf + self.sum_by_entity(cncn_info_holder) * taux - decote)
+        return period, max_(0, ip_post_decote + self.sum_by_entity(cncn_info_holder) * taux)
 
 
 @reference_formula

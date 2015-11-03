@@ -3265,10 +3265,10 @@
     </NODE>
     <NODE code="recouvrement" description="Mise en recouvrement de l'impôt">
         <CODE code="seuil" description="Seuil de recouvrement avant imputations" format="integer" type="monetary">
-          <VALUE deb="2002-01-01" fin="2013-12-31" valeur="61" />
+          <VALUE deb="2002-01-01" fin="2013-12-31" valeur="0" /> #61
         </CODE>
         <CODE code="min" description="Seuil de recouvrement après imputations" format="integer" type="monetary">
-          <VALUE deb="2002-01-01" fin="2013-12-31" valeur="12" />
+          <VALUE deb="2002-01-01" fin="2013-12-31" valeur="0" /> #12
         </CODE>
     </NODE>
     <NODE code="credits_impot" description="Crédits d'impôt">

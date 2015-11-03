@@ -1236,20 +1236,20 @@ class decote(DatedFormulaColumn):
     entity_class = FoyersFiscaux
     label = u"décote"
 
-    @dated_function(start = date(2015, 1, 1))
-    def function_2015(self, simulation, period):
-        period = period.start.offset('first-of', 'year').period('year')
-        ir_plaf_qf = simulation.calculate('ir_plaf_qf', period)
-        nb_adult = simulation.calculate('nb_adult', period)
-        decote_seuil_celib = simulation.legislation_at(period.start).ir.decote_seuil_celib.seuil
-        decote_seuil_couple = simulation.legislation_at(period.start).ir.decote_seuil_couple.seuil
-        decote_celib = max_(0, (decote_seuil_celib - .75 * ir_plaf_qf))
-        decote_couple = max_(0, (decote_seuil_couple - .75 * ir_plaf_qf))
-        #for obs in decote_celib != 0:
-        #    print decote_celib[obs] - ((ir_plaf_qf < (decote_seuil_celib*(4/3))) * (decote_seuil_celib - .75 * ir_plaf_qf))[obs]
-        return period, (nb_adult == 1) * decote_celib + (nb_adult == 2) * decote_couple
+    # @dated_function(start = date(2015, 1, 1))
+    # def function_2015(self, simulation, period):
+    #     period = period.start.offset('first-of', 'year').period('year')
+    #     ir_plaf_qf = simulation.calculate('ir_plaf_qf', period)
+    #     nb_adult = simulation.calculate('nb_adult', period)
+    #     decote_seuil_celib = simulation.legislation_at(period.start).ir.decote_seuil_celib.seuil
+    #     decote_seuil_couple = simulation.legislation_at(period.start).ir.decote_seuil_couple.seuil
+    #     decote_celib = max_(0, (decote_seuil_celib - .75 * ir_plaf_qf))
+    #     decote_couple = max_(0, (decote_seuil_couple - .75 * ir_plaf_qf))
+    #     #for obs in decote_celib != 0:
+    #     #    print decote_celib[obs] - ((ir_plaf_qf < (decote_seuil_celib*(4/3))) * (decote_seuil_celib - .75 * ir_plaf_qf))[obs]
+    #     return period, (nb_adult == 1) * decote_celib + (nb_adult == 2) * decote_couple
 
-    @dated_function(start = date(2014, 1, 1), stop = date(2014, 12, 31))
+    @dated_function(start = date(2002, 1, 1), stop = date(2014, 12, 31))
     def function_2014(self, simulation, period):
         period = period.start.offset('first-of', 'year').period('year')
         ir_plaf_qf = simulation.calculate('ir_plaf_qf', period)
@@ -1261,13 +1261,7 @@ class decote(DatedFormulaColumn):
 
         return period, (nb_adult == 1) * decote_celib + (nb_adult == 2) * decote_couple
 
-    @dated_function(start = date(2001, 1, 1), stop = date(2013, 12, 31))
-    def function_2001_2013(self, simulation, period):
-        period = period.start.offset('first-of', 'year').period('year')
-        ir_plaf_qf = simulation.calculate('ir_plaf_qf', period)
-        decote = simulation.legislation_at(period.start).ir.decote
 
-        return period, (ir_plaf_qf < decote.seuil) * (decote.seuil - ir_plaf_qf) * 0.5
 @reference_formula
 
 class decote_gain_fiscal(SimpleFormulaColumn):

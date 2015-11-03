@@ -2105,128 +2105,34 @@
       </TRANCHE>
       <TRANCHE code="tranche1">
         <SEUIL>
-          <VALUE deb="2001-01-01" fin="2001-12-31" valeur="4121" />
-          <VALUE deb="2002-01-01" fin="2002-12-31" valeur="4191" />
-          <VALUE deb="2003-01-01" fin="2003-12-31" valeur="4262" />
-          <VALUE deb="2004-01-01" fin="2004-12-31" valeur="4334" />
-          <VALUE deb="2005-01-01" fin="2005-12-31" valeur="4412" />
-          <VALUE deb="2006-01-01" fin="2006-12-31" valeur="5614" />
-          <VALUE deb="2007-01-01" fin="2007-12-31" valeur="5687" />
-          <VALUE deb="2008-01-01" fin="2008-12-31" valeur="5852" />
-          <VALUE deb="2009-01-01" fin="2009-12-31" valeur="5875" />
-          <VALUE deb="2010-01-01" fin="2012-12-31" valeur="5963" />
-          <VALUE deb="2013-01-01" fin="2013-12-31" valeur="6011" />
-          <VALUE deb="2014-01-01" fin="2014-12-31" valeur="9690" />
-          <VALUE deb="2015-01-01" fin="2015-12-31" valeur="9700" />
+          <VALUE deb="2002-01-01" fin="2015-12-31" valeur="9690" />
         </SEUIL>
         <TAUX>
-          <VALUE deb="2001-01-01" fin="2002-12-31" valeur="0.0705" />
-          <VALUE deb="2003-01-01" fin="2005-12-31" valeur="0.0683" />
-          <VALUE deb="2006-01-01" fin="2013-12-31" valeur="0.055" />
-          <VALUE deb="2014-01-01" fin="2015-12-31" valeur="0.14" />
+          <VALUE deb="2002-01-01" fin="2015-12-31" valeur="0.14" /> #0.1739
         </TAUX>
       </TRANCHE>
       <TRANCHE code="tranche2">
         <SEUIL>
-          <VALUE deb="2001-01-01" fin="2001-12-31" valeur="8104" />
-          <VALUE deb="2002-01-01" fin="2002-12-31" valeur="8242" />
-          <VALUE deb="2003-01-01" fin="2003-12-31" valeur="8382" />
-          <VALUE deb="2004-01-01" fin="2004-12-31" valeur="8524" />
-          <VALUE deb="2005-01-01" fin="2005-12-31" valeur="8677" />
-          <VALUE deb="2006-01-01" fin="2006-12-31" valeur="11198" />
-          <VALUE deb="2007-01-01" fin="2007-12-31" valeur="11344" />
-          <VALUE deb="2008-01-01" fin="2008-12-31" valeur="11673" />
-          <VALUE deb="2009-01-01" fin="2009-12-31" valeur="11720" />
-          <VALUE deb="2010-01-01" fin="2012-12-31" valeur="11896" />
-          <VALUE deb="2013-01-01" fin="2013-12-31" valeur="11991" />
-          <VALUE deb="2014-01-01" fin="2014-12-31" valeur="26764" />
-          <VALUE deb="2015-01-01" fin="2015-12-31" valeur="26791" />
+          <VALUE deb="2002-01-01" fin="2015-12-31" valeur="26764" />
         </SEUIL>
         <TAUX>
-          <VALUE deb="2001-01-01" fin="2001-12-31" valeur="0.21" />
-          <VALUE deb="2002-01-01" fin="2005-12-31" valeur="0.1914" />
-          <VALUE deb="2006-01-01" fin="2013-12-31" valeur="0.14" />
-          <VALUE deb="2014-01-01" fin="2015-12-31" valeur="0.30" />
+          <VALUE deb="2002-01-01" fin="2015-12-31" valeur="0.30" />
         </TAUX>
       </TRANCHE>
       <TRANCHE code="tranche3">
         <SEUIL>
-          <VALUE deb="2001-01-01" fin="2001-12-31" valeur="14264" />
-          <VALUE deb="2002-01-01" fin="2002-12-31" valeur="14506" />
-          <VALUE deb="2003-01-01" fin="2003-12-31" valeur="14753" />
-          <VALUE deb="2004-01-01" fin="2004-12-31" valeur="15004" />
-          <VALUE deb="2005-01-01" fin="2005-12-31" valeur="15274" />
-          <VALUE deb="2006-01-01" fin="2006-12-31" valeur="24872" />
-          <VALUE deb="2007-01-01" fin="2007-12-31" valeur="25195" />
-          <VALUE deb="2008-01-01" fin="2008-12-31" valeur="25926" />
-          <VALUE deb="2009-01-01" fin="2009-12-31" valeur="26030" />
-          <VALUE deb="2010-01-01" fin="2012-12-31" valeur="26420" />
-          <VALUE deb="2013-01-01" fin="2013-12-31" valeur="26631" />
-          <VALUE deb="2014-01-01" fin="2014-12-31" valeur="71754" />
-          <VALUE deb="2015-01-01" fin="2015-12-31" valeur="71828" />
+          <VALUE deb="2002-01-01" fin="2015-12-31" valeur="71754" />
         </SEUIL>
         <TAUX>
-          <VALUE deb="2001-01-01" fin="2001-12-31" valeur="0.3100" />
-          <VALUE deb="2002-01-01" fin="2002-12-31" valeur="0.2914" />
-          <VALUE deb="2003-01-01" fin="2005-12-31" valeur="0.2826" />
-          <VALUE deb="2006-01-01" fin="2013-12-31" valeur="0.3000" />
-          <VALUE deb="2014-01-01" fin="2015-12-31" valeur="0.4100" />
+          <VALUE deb="2002-01-01" fin="2015-12-31" valeur="0.4100" />
         </TAUX>
       </TRANCHE>
       <TRANCHE code="tranche4">
         <SEUIL>
-          <VALUE deb="2001-01-01" fin="2001-12-31" valeur="23096" />
-          <VALUE deb="2002-01-01" fin="2002-12-31" valeur="23489" />
-          <VALUE deb="2003-01-01" fin="2003-12-31" valeur="23888" />
-          <VALUE deb="2004-01-01" fin="2004-12-31" valeur="24294" />
-          <VALUE deb="2005-01-01" fin="2005-12-31" valeur="24731" />
-          <VALUE deb="2006-01-01" fin="2006-12-31" valeur="66679" />
-          <VALUE deb="2007-01-01" fin="2007-12-31" valeur="67546" />
-          <VALUE deb="2008-01-01" fin="2008-12-31" valeur="69505" />
-          <VALUE deb="2009-01-01" fin="2009-12-31" valeur="69783" />
-          <VALUE deb="2010-01-01" fin="2012-12-31" valeur="70830" />
-          <VALUE deb="2013-01-01" fin="2013-12-31" valeur="71397" />
-          <VALUE deb="2014-01-01" fin="2014-12-31" valeur="151956" />
-          <VALUE deb="2015-01-01" fin="2015-12-31" valeur="152108" />
+          <VALUE deb="2002-01-01" fin="2015-12-31" valeur="151956" />
         </SEUIL>
         <TAUX>
-          <VALUE deb="2001-01-01" fin="2001-12-31" valeur="0.4100" />
-          <VALUE deb="2002-01-01" fin="2002-12-31" valeur="0.3854" />
-          <VALUE deb="2003-01-01" fin="2005-12-31" valeur="0.3738" />
-          <VALUE deb="2006-01-01" fin="2009-12-31" valeur="0.4000" />
-          <VALUE deb="2010-01-01" fin="2013-12-31" valeur="0.4100" />
-          <VALUE deb="2014-01-01" fin="2015-12-31" valeur="0.4500" />
-        </TAUX>
-      </TRANCHE>
-      <TRANCHE code="tranche5">
-        <SEUIL>
-          <VALUE deb="2001-01-01" fin="2001-12-31" valeur="37579" />
-          <VALUE deb="2002-01-01" fin="2002-12-31" valeur="38218" />
-          <VALUE deb="2003-01-01" fin="2003-12-31" valeur="38868" />
-          <VALUE deb="2004-01-01" fin="2004-12-31" valeur="39529" />
-          <VALUE deb="2005-01-01" fin="2005-12-31" valeur="40241" />
-          <VALUE deb="2012-01-01" fin="2012-12-31" valeur="150000" />
-          <VALUE deb="2013-01-01" fin="2013-12-31" valeur="151200" />
-        </SEUIL>
-        <TAUX>
-          <VALUE deb="2001-01-01" fin="2001-12-31" valeur="0.4675" />
-          <VALUE deb="2002-01-01" fin="2002-12-31" valeur="0.4394" />
-          <VALUE deb="2003-01-01" fin="2005-12-31" valeur="0.4262" />
-          <VALUE deb="2012-01-01" fin="2013-12-31" valeur="0.4500" />
-        </TAUX>
-      </TRANCHE>
-      <TRANCHE code="tranche6">
-        <SEUIL>
-          <VALUE deb="2001-01-01" fin="2001-12-31" valeur="46343" />
-          <VALUE deb="2002-01-01" fin="2002-12-31" valeur="47131" />
-          <VALUE deb="2003-01-01" fin="2003-12-31" valeur="47932" />
-          <VALUE deb="2004-01-01" fin="2004-12-31" valeur="48747" />
-          <VALUE deb="2005-01-01" fin="2005-12-31" valeur="49624" />
-        </SEUIL>
-        <TAUX>
-          <VALUE deb="2001-01-01" fin="2001-12-31" valeur="0.5275" />
-          <VALUE deb="2002-01-01" fin="2002-12-31" valeur="0.4958" />
-          <VALUE deb="2003-01-01" fin="2005-12-31" valeur="0.4809" />
+          <VALUE deb="2002-01-01" fin="2015-12-31" valeur="0.4500" />
         </TAUX>
       </TRANCHE>
 
@@ -2792,13 +2698,13 @@
     </NODE>
     <NODE code="decote_seuil_celib" description="Décote">
       <CODE code="seuil" description="Seuil de la décôte pour un célibataire" format="integer" type="monetary">
-        <VALUE deb="2014-01-01" fin="2014-12-31" valeur="1135" />
+        <VALUE deb="2002-01-01" fin="2014-12-31" valeur="1135" />
         <VALUE deb="2015-01-01" fin="2015-12-31" valeur="1165" />
       </CODE>
     </NODE>
     <NODE code="decote_seuil_couple" description="Décote">
       <CODE code="seuil" description="Seuil de la décôte pour un couple" format="integer" type="monetary">
-        <VALUE deb="2014-01-01" fin="2014-12-31" valeur="1870" />
+        <VALUE deb="2002-01-01" fin="2014-12-31" valeur="1870" />
         <VALUE deb="2015-01-01" fin="2015-12-31" valeur="1920" />
       </CODE>
     </NODE>
@@ -3362,10 +3268,10 @@
     </NODE>
     <NODE code="recouvrement" description="Mise en recouvrement de l'impôt">
         <CODE code="seuil" description="Seuil de recouvrement avant imputations" format="integer" type="monetary">
-          <VALUE deb="2002-01-01" fin="2013-12-31" valeur="61" />
+          <VALUE deb="2002-01-01" fin="2013-12-31" valeur="00" /> #61
         </CODE>
         <CODE code="min" description="Seuil de recouvrement après imputations" format="integer" type="monetary">
-          <VALUE deb="2002-01-01" fin="2013-12-31" valeur="12" />
+          <VALUE deb="2002-01-01" fin="2013-12-31" valeur="0" /> #12
         </CODE>
     </NODE>
     <NODE code="credits_impot" description="Crédits d'impôt">

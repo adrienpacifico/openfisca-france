@@ -322,7 +322,7 @@ class revetproduits(Variable):
         http://www.impots.gouv.fr/portal/deploiement/p1/fichedescriptiveformulaire_8342/fichedescriptiveformulaire_8342.pdf
         '''
         period = period.this_year
-        salcho_imp_holder = simulation.compute('salcho_imp', period)
+        salcho_imp_holder = simulation.compute_add('salcho_imp', period)
         pen_net_holder = simulation.compute('pen_net', period)
         rto_net = simulation.calculate('rto_net', period)
         rev_cap_bar = simulation.calculate('rev_cap_bar', period)

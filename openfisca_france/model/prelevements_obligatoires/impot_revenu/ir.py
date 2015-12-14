@@ -1680,7 +1680,7 @@ class rfr(Variable):
         f3vg -> rev_cat_pv -> ... -> rni
         '''
         period = period.this_year
-        rni = simulation.calculate('rni', period)
+        rni = simulation.calculate_add('rni', period)
         f3va_holder = simulation.compute('f3va', period)
         f3vi_holder = simulation.compute('f3vi', period)
         rfr_cd = simulation.calculate('rfr_cd', period)
@@ -2541,7 +2541,7 @@ class abat_spe(Variable):
         age_holder = simulation.compute('age', period)
         caseP = simulation.calculate('caseP', period)
         caseF = simulation.calculate('caseF', period)
-        rng = simulation.calculate('rng', period)
+        rng = simulation.calculate_add('rng', period)
         nbN = simulation.calculate('nbN', period)
         abattements_speciaux = simulation.legislation_at(period.start).ir.abattements_speciaux
 

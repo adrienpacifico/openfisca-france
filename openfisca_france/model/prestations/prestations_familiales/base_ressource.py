@@ -69,7 +69,7 @@ class br_pf_i(Variable):
         period = period.this_month
         annee_fiscale_n_2 = period.n_2
 
-        tspr = simulation.calculate('tspr', annee_fiscale_n_2)
+        tspr = simulation.calculate_add('tspr', annee_fiscale_n_2)
         hsup = simulation.calculate('hsup', annee_fiscale_n_2)
         rpns = simulation.calculate('rpns', annee_fiscale_n_2)
 

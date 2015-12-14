@@ -216,7 +216,7 @@ class rev_trav(Variable):
         Revenu du travail
         '''
         period = period.this_year
-        rev_sal = simulation.calculate('rev_sal', period)
+        rev_sal = simulation.calculate_add('rev_sal', period)
         rag = simulation.calculate('rag', period)
         ric = simulation.calculate('ric', period)
         rnc = simulation.calculate('rnc', period)

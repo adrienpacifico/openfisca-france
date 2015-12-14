@@ -1,0 +1,8 @@
+Babel >= 0.9.4
+numpy
+OpenFisca-Core >= 0.5dev
+scipy >= 0.12
+
+[tests]
+Biryani >= 0.10.1
+PyYAML

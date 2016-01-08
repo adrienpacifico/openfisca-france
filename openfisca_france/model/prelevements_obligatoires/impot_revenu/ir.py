@@ -2948,7 +2948,7 @@ class ppe(Variable):
         """
         period = period.this_year
         ppe_brute = simulation.calculate('ppe_brute', period)
-        rsa_act_i_holder = simulation.compute('rsa_act_i', period)
+        rsa_act_i_holder = simulation.compute_add('rsa_act_i', period)
 
         #   TODO: les foyers qui paient l'ISF n'ont pas le droit à la PPE
         rsa_act_i = self.split_by_roles(rsa_act_i_holder, roles = [VOUS, CONJ])

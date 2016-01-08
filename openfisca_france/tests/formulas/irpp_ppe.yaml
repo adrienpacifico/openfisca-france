@@ -1,0 +1,20 @@
+- name: "IRPP - Célibataire ayant des revenus salariaux (1AJ) de 20 000 €"
+  period: 2010
+  absolute_error_margin: 0.5
+  input_variables:
+    salaire_imposable: 14000
+    ppe_du_sa: 1620
+
+  output_variables:
+    decote_gain_fiscal : 167
+    ppe: 851
+
+- name: "IRPP - Célibataire ayant des revenus salariaux (1AJ) de 20 000 €"
+  period: 2012
+  absolute_error_margin: 0.5
+  input_variables:
+    salaire_imposable: 7000
+    ppe_du_sa: 1000
+
+  output_variables:
+    ppe: 847

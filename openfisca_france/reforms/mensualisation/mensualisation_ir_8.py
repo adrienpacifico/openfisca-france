@@ -70,31 +70,88 @@ def build_reform(tax_benefit_system):
 
             abattement_minimum = abatpro.min * not_(chomeur_longue_duree) + abatpro.min2 * chomeur_longue_duree
             abatfor = round(min_(max_(abatpro.taux * rev_sal, abattement_minimum), abatpro.max))
+
             return period, (frais_reels > abatfor) * (rev_sal - frais_reels) + (frais_reels <= abatfor) * max_(0, rev_sal - abatfor)
+
+
+
+
+
+    class rev_pen_mensuel_times_12(Reform.Variable):
+        label = u"Revenu imposé comme des pensions (retraites, pensions alimentaires, etc.)"
+        reference = ir.rev_pen
+
+        def function(self, simulation, period):
+            period = period.this_month
+            pensions_alimentaires_percues = simulation.calculate_add('pensions_alimentaires_percues', period)
+            pensions_alimentaires_percues_decl = simulation.calculate_add('pensions_alimentaires_percues_decl', period) #TODO : mensualiser les pensions si possible
+            retraite_imposable = simulation.calculate('retraite_imposable', period.this_month)
+
+            return period, pensions_alimentaires_percues * pensions_alimentaires_percues_decl + retraite_imposable * 12
+
+
+    class pen_net_mensuel_times_12(Reform.Variable):
+        label = u"Pensions après abattements"
+        reference = ir.pen_net
+
+        def function(self, simulation, period):
+            period = period.this_month
+            rev_pen = simulation.calculate('rev_pen_mensuel_times_12', period.this_month)
+            abatpen = simulation.legislation_at(period.start).ir.tspr.abatpen
+
+            #    TODO: problème car les pensions sont majorées au niveau du foyer
+        #    d11 = ( AS + BS + CS + DS + ES +
+        #            AO + BO + CO + DO + EO )
+        #    penv2 = (d11-f11> abatpen.max)*(penv + (d11-f11-abatpen.max)) + (d11-f11<= abatpen.max)*penv
+        #    Plus d'abatement de 20% en 2006
+            return period, max_(0, rev_pen - round(max_(abatpen.taux * rev_pen , abatpen.min)))
+
+
+
+
 
     class sal_pen_net_mensuel_times_12(Reform.Variable):
         reference = ir.sal_pen_net
         label = u"Salaires et chômage imposables après abattements"
+
         def function(self, simulation, period):
             period = period.this_month
-            salcho_imp = simulation.calculate('salcho_imp_mensuel_times_12', period)  #NMP
-           # pen_net = simulation.calculate('pen_net', period.this_year)    #NMP #TODO: mensualize pen_net --> pas l'info en mensuel sauf si retraité
+            salcho_imp = simulation.calculate('salcho_imp_mensuel_times_12', period)
+            pen_net = simulation.calculate('pen_net_mensuel_times_12', period)
+            abat_sal_pen = simulation.calculate('abat_sal_pen', period)
+
+            return period, salcho_imp + pen_net - abat_sal_pen
 
 
-            ##### Tweak pour avoir les retraites imposables, on prend les pen_net,
-            #####  on soustrait les retraites imposable, on rajoute la retraite imposable mensuelle.
 
-            retraite_imposable = simulation.calculate('retraite_imposable', period) * 12
-            pen_net = simulation.calculate('pen_net', period.this_year) \
-                      - simulation.calculate_add('retraite_imposable', period.this_year)  # Vu qu'on est en *12 sur la retraite imposable, on a comme
-                                                                                          # si on repartissait le reste des pensions chaque mois sur l'année !
-            pen_net = simulation.calculate('pen_net', period.this_year) + retraite_imposable  #on rajoute la retraite du mois
 
-            #####
 
-            abat_sal_pen = simulation.calculate('abat_sal_pen', period.this_year) #MP # TODO : mensualiser en ajoutant la formule et en modifiant le calcul, pour l'instant on prend le résultat annuel en le mensualisant
 
-            print period
+
+
+
+
+
+        # def function(self, simulation, period):
+        #     period = period.this_month
+        #     salcho_imp = simulation.calculate('salcho_imp_mensuel_times_12', period)  #NMP
+        #    # pen_net = simulation.calculate('pen_net', period.this_year)    #NMP #TODO: mensualize pen_net --> pas l'info en mensuel sauf si retraité
+        #
+        #
+        #     ##### Tweak pour avoir les retraites imposables, on prend les pen_net,
+        #     #####  on soustrait les retraites imposable, on rajoute la retraite imposable mensuelle.
+        #
+        #     retraite_imposable = simulation.calculate('retraite_imposable', period) * 12
+        #     pen_net = simulation.calculate('pen_net', period.this_year) \
+        #               - simulation.calculate_add('retraite_imposable', period.this_year)  # Vu qu'on est en *12 sur la retraite imposable, on a comme
+        #                                                                                   # si on repartissait le reste des pensions chaque mois sur l'année !
+        #     pen_net = simulation.calculate('pen_net', period.this_year) + retraite_imposable  #on rajoute la retraite du mois
+        #
+        #     #####
+        #
+        #     abat_sal_pen = simulation.calculate('abat_sal_pen', period.this_year) #MP # TODO : mensualiser en ajoutant la formule et en modifiant le calcul, pour l'instant on prend le résultat annuel en le mensualisant
+
+
             return period, salcho_imp + pen_net - abat_sal_pen
 
     class tspr_mensuel_times_12(Reform.Variable):

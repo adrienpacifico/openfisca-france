@@ -10,6 +10,7 @@ from openfisca_core import simulations, periods
 from ... import entities
 from ...model.base import QUIFOY
 from ...model.prelevements_obligatoires.impot_revenu import ir
+from ...model.prestations import minima_sociaux
 from ...model import mesures
 from ... import model
 from ...model.base import *
@@ -702,6 +703,8 @@ def build_reform(tax_benefit_system):
 
             return period, ars * (ars >= P.ars.seuil_nv) #previously period_br instead
 
+
+
     class pfam(Reform.Variable):
         reference = mesures.pfam
         label = u"Total des prestations familiales"
@@ -720,9 +723,7 @@ def build_reform(tax_benefit_system):
             asf = simulation.calculate_add('asf', period)
             crds_pfam = simulation.calculate('crds_pfam', period)
 
-            return period, af + cf + ars + paje + asf + crds_pfam #+ aeeh
-
-
+            return period, af + cf + ars + paje + asf + crds_pfam + aeeh
 
 
 
@@ -731,7 +732,67 @@ def build_reform(tax_benefit_system):
     Reform.add_column(formulas.neutralize_column(tax_benefit_system.column_by_name['ars']))
     Reform.add_column(formulas.neutralize_column(tax_benefit_system.column_by_name['aeeh']))
 
+    # # class rsa_act(DatedVariable):
+    # #     base_function = requested_period_added_value
+    # #     column = FloatCol
+    # #     entity_class = Familles
+    # #     label = u"Revenu de solidarité active - activité"
+    # #     start_date = date(2009, 6, 1)
+    # #
+    # #     @dated_function(start = date(2009, 6, 1))
+    # #     def function_2009(self, simulation, period):
+    # #         '''
+    # #         Calcule le montant du RSA activité
+    # #         Note: le partage en moitié est un point de législation, pas un choix arbitraire
+    # #         '''
+    # #         period = period
+    # #         rsa = simulation.calculate_add('rsa', period)
+    # #         rmi = simulation.calculate_add('rmi', period)
+    # #
+    # #         return period, max_(rsa - rmi, 0)
+    #
+    #
+    # class rsa_mensuel(Reform.DatedVariable):
+    #     reference = minima_sociaux.rsa
+    #     label = 'rsa on monthly basis'
+    #
+    #     @dated_function(start = date(2009, 06, 1))
+    #     def function(self, simulation, period):
+    #         period = period.this_month
+    #         rsa_majore = simulation.calculate('rsa_majore', period)
+    #         rsa_non_majore = simulation.calculate('rsa_non_majore', period)
+    #         rsa_non_calculable = simulation.calculate('rsa_non_calculable', period)
+    #
+    #         rsa = (1 - rsa_non_calculable) * max_(rsa_majore, rsa_non_majore)
+    #
+    #         return period, rsa
 
+
+    class mini_mensuel(Reform.Variable):
+        reference = mesures.mini
+        label = u"Minima sociaux"
+        url = "http://fr.wikipedia.org/wiki/Minima_sociaux"
+
+        def function(self, simulation, period):
+            '''
+            Minima sociaux
+            '''
+            period = period.this_month
+            aspa = simulation.calculate_add('aspa', period.this_year)/12  # TODO: put on monthly basis
+            aah_holder = simulation.compute_add('aah', period.this_year)  # TODO: put on monthly basis
+            caah_holder = simulation.compute_add('caah', period.this_year)  # TODO: put on monthly basis
+            asi = simulation.calculate_add('asi', period.this_year)/12  # TODO: put on monthly basis
+            rsa = simulation.calculate_add('rsa', period.this_year)/12  # TODO: put on monthly basis
+            #aefa = simulation.calculate('aefa', period)
+            api = simulation.calculate_add('api', period.this_year)/12  # TODO: put on monthly basis
+            ass = simulation.calculate_add('ass', period.this_year)/12  # TODO: put on monthly basis
+            psa = simulation.calculate_add('psa', period.this_year)/12  # TODO: put on monthly basis
+
+            aah = self.sum_by_entity(aah_holder)
+            aah = aah/12
+            caah = self.sum_by_entity(caah_holder)
+            caah = caah/12
+            return period, aspa + aah + caah + asi + rsa  + api + ass + psa #+ aefa
 
 
 
@@ -783,30 +844,29 @@ def build_reform(tax_benefit_system):
 
 
 
-    class mini(Reform.Variable):
-        reference = mesures.mini
-        label = u"Minima sociaux"
-        url = "http://fr.wikipedia.org/wiki/Minima_sociaux"
 
-        def function(self, simulation, period):
-            '''
-            Minima sociaux
-            '''
-            period = period.this_month
-            aspa = simulation.calculate_add('aspa', period)
-            aah_holder = simulation.compute_add('aah', period)
-            caah_holder = simulation.compute_add('caah', period)
-            asi = simulation.calculate_add('asi', period)
-            rsa = simulation.calculate_add('rsa', period)
-            #aefa = simulation.calculate('aefa', period)
-            api = simulation.calculate('api', period)
-            ass = simulation.calculate_add('ass', period)
-            psa = simulation.calculate_add('psa', period)
 
-            aah = self.sum_by_entity(aah_holder)
-            caah = self.sum_by_entity(caah_holder)
 
-            return period, aspa + aah + caah + asi + rsa  + api + ass + psa #+ aefa
+
+##### Annalyse ####
+    #
+    # class utility_function_foyer(Reform.Variable):
+    #     column = FloatCol(default = 0)
+    #     entity_class = Individus
+    #
+    #     def function(self, simulation, period):
+    #         period = period.this_month
+    #         tspr_holder = simulation.compute('tspr', period)
+    #         tspr = self.sum_by_entity(tspr_holder)
+    #
+    #
+    #         tspr = self.sum_by_entity(tspr_holder)
+    #
+    #         revdisp =
+    #
+    #     return
+
+
 
 
 

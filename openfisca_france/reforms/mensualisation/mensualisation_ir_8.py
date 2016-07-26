@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division
-
+import numpy as np
 from numpy import (datetime64, logical_and as and_, logical_not as not_, logical_or as or_, logical_xor as xor_,
     maximum as max_, minimum as min_, round)
 from openfisca_core import columns, formulas, reforms
@@ -15,6 +15,7 @@ from ...model import mesures
 from ... import model
 from ...model.base import *
 
+from ...model.prestations.minima_sociaux import rsa
 
 
 ## Mensualisaton ou on rend indépendante toutes les variables mensuelles (pas d'é
@@ -547,14 +548,15 @@ def build_reform(tax_benefit_system):
             impot_annuel = -simulation.calculate("irpp", period)
             lambda_compensation = ((impot_mensuel*12)/impot_annuel) - 12  #En fait impot mensuel est égal à G(y_T)/T il faut monter plus haut pour prendre le lambda
 
+            #lambda_compensation = ((impot_annuel == 0) & (impot_mensuel == 0)) * 0 + ~((impot_annuel == 0) & (impot_mensuel == 0)) * lambda_compensation
+            import numpy as np
+            lambda_compensation = (impot_annuel == 0) * 0 + ~(impot_annuel == 0) * lambda_compensation #empèche d'avoir des + l'infiny
 
-
-            lambda_compensation = ((impot_annuel == 0) & (impot_mensuel == 0)) * 0 + ~((impot_annuel == 0) & (impot_mensuel == 0)) * lambda_compensation
-
-
+            #import numpy as np
+            #assert np.all(np.isfinite(lambda_compensation))
             ## traiter le cas ou irpp annuel = 0
 
-            return period, ((impot_mensuel*12)/impot_annuel) - 12
+            return period, lambda_compensation
             #return period, (impot_mensuel/impot_annuel)# - 12  #réfléchir à ça plutôt que l'autre lambda
 
 
@@ -568,19 +570,21 @@ def build_reform(tax_benefit_system):
             Montant après seuil de recouvrement (hors ppe)
             '''
             period = period.this_month
-            print period
-            impot_mensuel_times_12 = -simulation.calculate("irpp_mensuel", period)*12
-            impot_annuel = -simulation.calculate_add("irpp", period.this_year)
-            lambda_compensation = -simulation.calculate("lambda_compensation", period.this_year)
 
-
+            impot_mensuel_times_12 = simulation.calculate("irpp_mensuel", period)*12
+            lambda_compensation = simulation.calculate("lambda_compensation", period.this_year)
 
             compensated_irpp = impot_mensuel_times_12/(12 + lambda_compensation)
+            compensated_irpp = (simulation.calculate("irpp", period.this_year) == 0) * 0 + \
+                ~(simulation.calculate("irpp", period.this_year) == 0) * np.nan_to_num(compensated_irpp)
+            compensated_irpp = (
+                            (simulation.calculate_add("irpp_mensuel", period.this_year) == 0) * #Condition
+                            (simulation.calculate("irpp", period.this_year)/12) # on répartit sur l'année
+                        ) + ~(simulation.calculate_add("irpp_mensuel", period.this_year) == 0) * compensated_irpp #condition opposée
 
+            #print compensated_irpp[[4,743]]
+            return period, compensated_irpp
 
-            ## traiter le cas ou irpp annuel = 0
-
-            return period, -compensated_irpp
 
 
     class impo_mensuel(Reform.Variable):
@@ -593,13 +597,33 @@ def build_reform(tax_benefit_system):
             Impôts directs
             '''
             period = period.this_month
-            irpp_holder = simulation.compute_add('irpp_mensuel', period)
+            irpp_holder = simulation.compute('irpp_mensuel', period)
             taxe_habitation = simulation.calculate('taxe_habitation', period.this_year)/12
 
             irpp = self.cast_from_entity_to_role(irpp_holder, role = VOUS)
             irpp = self.sum_by_entity(irpp)
 
             return period, irpp + taxe_habitation
+
+    class compensated_impo_mensuel(Reform.Variable):
+        reference = mesures.impo
+        label = u"Impôts directs"
+        url = "http://fr.wikipedia.org/wiki/Imp%C3%B4t_direct"
+
+        def function(self, simulation, period):
+            '''
+            Impôts directs
+            '''
+            period = period.this_month
+            irpp_holder = simulation.compute('compensated_irpp_mensuel', period)
+            taxe_habitation = simulation.calculate('taxe_habitation', period.this_year)/12
+
+            irpp = self.cast_from_entity_to_role(irpp_holder, role = VOUS)
+            irpp = self.sum_by_entity(irpp)
+
+            return period, irpp + taxe_habitation
+
+
 
     class iaidrdi_mensuel(Reform.Variable):
         reference= ir.iaidrdi
@@ -792,12 +816,12 @@ def build_reform(tax_benefit_system):
             Minima sociaux
             '''
             period = period.this_month
-            aspa = simulation.calculate_add('aspa', period.this_year)  # TODO: put on monthly basis
+            aspa = simulation.calculate_add('aspa', period.this_year)/12  # TODO: put on monthly basis
             aah_holder = simulation.compute_add('aah', period.this_month)  # TODO: put on monthly basis
             caah_holder = simulation.compute_add('caah', period.this_month)  # TODO: put on monthly basis
             asi = simulation.calculate_add('asi', period.this_month)  # TODO: put on monthly basis
             rsa = simulation.calculate_add('rsa', period.this_month) # TODO: put on monthly basis
-            aefa = simulation.calculate('aefa', period.this_year)/12 #TODO : problème
+            aefa = simulation.calculate('aefa', period.this_year)/12 #TODO : put on monthly basis
             api = simulation.calculate_add('api', period.this_month)  # TODO: put on monthly basis
             ass = simulation.calculate_add('ass', period.this_month)  # TODO: put on monthly basis
             psa = simulation.calculate_add('psa', period.this_month)  # TODO: put on monthly basis
@@ -806,7 +830,7 @@ def build_reform(tax_benefit_system):
             aah = aah/12
             caah = self.sum_by_entity(caah_holder)
             caah = caah/12
-            return period, aspa + aah + caah + asi + rsa  + api + ass + psa #+ aefa
+            return period, aspa + aah + caah + asi + rsa  + api + ass + psa + aefa
 
 
 
@@ -876,7 +900,10 @@ def build_reform(tax_benefit_system):
             rev_cap = self.sum_by_entity(rev_cap_holder) /12
             rev_trav = self.sum_by_entity(rev_trav_holder)
 
-            return period, rev_trav + pen + rev_cap + psoc + ppe + impo
+            revdisp = rev_trav + pen + rev_cap + psoc + ppe + impo # TODO: Tweak for the 860 neative disposable income.
+            revdisp = (revdisp>0) * revdisp
+
+            return period, revdisp
 
     class revdisp_mensuel_ir_mensuel(Reform.Variable):
         reference = mesures.revdisp
@@ -904,8 +931,167 @@ def build_reform(tax_benefit_system):
             rev_cap = self.sum_by_entity(rev_cap_holder) /12
             rev_trav = self.sum_by_entity(rev_trav_holder)
 
-            return period, rev_trav + pen + rev_cap + psoc + ppe + impo
+            revdisp = rev_trav + pen + rev_cap + psoc + ppe + impo # TODO: Tweak for the 860 negative disposable income.
+            revdisp = (revdisp>0) * revdisp
 
+
+            return period, revdisp
+
+
+    class revdisp_mensuel_compensated_ir_mensuel(Reform.Variable):
+        reference = mesures.revdisp
+        label = u"Revenu disponible du ménage"
+        url = "http://fr.wikipedia.org/wiki/Revenu_disponible"
+
+        def function(self, simulation, period):
+            '''
+            Revenu disponible - ménage
+            'men'
+            '''
+            period = period.this_month
+            rev_trav_holder = simulation.compute_add('rev_trav_mensuel', period)
+            pen_holder = simulation.compute('pen_mensuel', period)
+            rev_cap_holder = simulation.compute('rev_cap', period.this_year)
+            psoc_holder = simulation.compute_add_divide('psoc_mensuel', period)
+            ppe_holder = simulation.compute_add_divide('ppe', period)
+            impo = simulation.calculate('compensated_impo_mensuel', period)
+
+            pen = self.sum_by_entity(pen_holder)
+            ppe = self.cast_from_entity_to_role(ppe_holder, role = VOUS)
+            ppe = self.sum_by_entity(ppe)
+            psoc = self.cast_from_entity_to_role(psoc_holder, role = CHEF)
+            psoc = self.sum_by_entity(psoc)
+            rev_cap = self.sum_by_entity(rev_cap_holder) /12
+            rev_trav = self.sum_by_entity(rev_trav_holder)
+
+            revdisp = rev_trav + pen + rev_cap + psoc + ppe + impo # TODO: Tweak for the 860 negative disposable income.
+            revdisp = (revdisp>0) * revdisp
+
+
+            return period, revdisp
+
+    class revdisp_mensuel_compensated_ir_mensuel(Reform.Variable):
+        reference = mesures.revdisp
+        label = u"Revenu disponible du ménage"
+        url = "http://fr.wikipedia.org/wiki/Revenu_disponible"
+
+        def function(self, simulation, period):
+            '''
+            Revenu disponible - ménage
+            'men'
+            '''
+            period = period.this_month
+            rev_trav_holder = simulation.compute_add('rev_trav_mensuel', period)
+            pen_holder = simulation.compute('pen_mensuel', period)
+            rev_cap_holder = simulation.compute('rev_cap', period.this_year)
+            psoc_holder = simulation.compute_add_divide('psoc_mensuel', period)
+            ppe_holder = simulation.compute_add_divide('ppe', period)
+            impo = simulation.calculate('compensated_impo_mensuel', period)
+
+            pen = self.sum_by_entity(pen_holder)
+            ppe = self.cast_from_entity_to_role(ppe_holder, role = VOUS)
+            ppe = self.sum_by_entity(ppe)
+            psoc = self.cast_from_entity_to_role(psoc_holder, role = CHEF)
+            psoc = self.sum_by_entity(psoc)
+            rev_cap = self.sum_by_entity(rev_cap_holder) /12
+            rev_trav = self.sum_by_entity(rev_trav_holder)
+
+            revdisp = rev_trav + pen + rev_cap + psoc + ppe + impo # TODO: Tweak for the 860 negative disposable income.
+            revdisp = (revdisp>0) * revdisp
+
+
+            return period, revdisp
+
+
+    class utility_ir_annuel(Reform.Variable):
+        reference = mesures.revdisp
+        label = u"Revenu disponible du ménage"
+        def function(self, simulation, period):
+            '''
+            Revenu disponible - ménage
+            'men'
+            '''
+            period = period.this_month
+            revdisp = simulation.calculate('revdisp_mensuel_annuel', period)
+            utility = -(revdisp + 5000) **-0.89 #on ajoute 5000 pour pas avoir les familles à 0 de revdisp qui font - inf
+
+            return period, utility
+
+    class utility_ir_mensuel(Reform.Variable):
+        reference = mesures.revdisp
+        #label = u"Revenu disponible du ménage"
+        def function(self, simulation, period):
+            '''
+            Revenu disponible - ménage
+            'men'
+            '''
+            period = period.this_month
+            revdisp = simulation.calculate('revdisp_mensuel_ir_mensuel', period)
+            utility = -(revdisp + 5000) **-0.89
+
+            return period, utility
+
+    class utility_compensated_ir_mensuel(Reform.Variable):
+        reference = mesures.revdisp
+        #label = u"Revenu disponible du ménage"
+        def function(self, simulation, period):
+            '''
+            Revenu disponible - ménage
+            'men'
+            '''
+            period = period.this_month
+            revdisp = simulation.calculate('revdisp_mensuel_compensated_ir_mensuel', period)
+            utility = -(revdisp + 5000) **-0.89
+
+            return period, utility
+
+
+    class inverted_utility_ir_annuel(Reform.Variable):
+        reference = mesures.revdisp
+        label = u"utility_to_income"
+        def function(self, simulation, period):
+            '''
+            Revenu disponible - ménage
+            'men'
+            '''
+            period = period.this_month
+
+            utility = simulation.calculate('utility_ir_annuel', period)
+
+
+            return period, np.exp(
+                (np.log(-utility))/-.87)
+
+
+    class inverted_utility_ir_mensuel(Reform.Variable):
+        reference = mesures.revdisp
+        label = u"utility_to_income"
+        def function(self, simulation, period):
+            '''
+            Revenu disponible - ménage
+            'men'
+            '''
+            period = period.this_month
+            utility = simulation.calculate('utility_ir_mensuel', period)
+
+
+            return period, np.exp(
+                (np.log(-utility))/-.87)
+
+    class inverted_utility_compensated_ir_mensuel(Reform.Variable):
+        reference = mesures.revdisp
+        label = u"utility_to_income"
+        def function(self, simulation, period):
+            '''
+            Revenu disponible - ménage
+            'men'
+            '''
+            period = period.this_month
+            utility = simulation.calculate('utility_compensated_ir_mensuel', period)
+
+
+            return period, np.exp(
+                (np.log(-utility))/-.87)
 
 
 
@@ -930,6 +1116,535 @@ def build_reform(tax_benefit_system):
     #
     #     return
 
+
+
+
+
+#### RSA 2009 sur toute l'année 2009
+
+#     Reform.add_column(formulas.neutralize_column(tax_benefit_system.column_by_name['rmi']))
+#
+#
+#
+#
+#     class rsa(Reform.DatedVariable):
+#         column = FloatCol
+#         reference = rsa.rsa
+#         start_date = date(2009, 1, 1) #Changed
+#
+#         @dated_function(start = date(2009, 1, 1))
+#         def function(self, simulation, period):
+#             period = period.this_month
+#             rsa_majore = simulation.calculate('rsa_majore', period)
+#             rsa_non_majore = simulation.calculate('rsa_non_majore', period)
+#             rsa_non_calculable = simulation.calculate('rsa_non_calculable', period)
+#
+#             rsa = (1 - rsa_non_calculable) * max_(rsa_majore, rsa_non_majore)
+#
+#             return period, rsa
+#
+#
+# class br_rmi_pf(DatedVariable):
+#     column = FloatCol
+#     entity_class = Familles
+#     label = u"Prestations familiales inclues dans la base ressource RSA/RMI"
+#
+#
+#     @dated_function(start = date(2004, 1, 1), stop = date(2014, 3, 31))
+#     def function_2003(self, simulation, period):
+#         period = period.this_month
+#         af_base = simulation.calculate('af_base', period)
+#         cf = simulation.calculate('cf', period)
+#         asf = simulation.calculate('asf', period)
+#         paje_base = simulation.calculate('paje_base', period)
+#         paje_clca = simulation.calculate('paje_clca', period)
+#         paje_prepare = simulation.calculate('paje_prepare', period)
+#         paje_colca = simulation.calculate('paje_colca', period)
+#         P = simulation.legislation_at(period.start).minim
+#
+#         return period, P.rmi.pfInBRrmi * (af_base + cf + asf + paje_base + paje_clca + paje_prepare + paje_colca)
+#
+# class crds_mini(DatedVariable):
+#     column = FloatCol
+#     entity_class = Familles
+#     label = u"CRDS versée sur les minimas sociaux"
+#
+#     @dated_function(start = date(2009, 6, 1))
+#     def function_2009_(self, simulation, period):
+#         """
+#         CRDS sur les minima sociaux
+#         """
+#         period = period.this_month
+#         rsa_act = simulation.calculate('rsa_act', period)
+#         taux_crds = simulation.legislation_at(period.start).fam.af.crds
+#
+#         return period, - taux_crds * rsa_act
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+
+
+    class crds_mini(DatedVariable):
+        column = FloatCol
+        reference = rsa.crds_mini
+        label = u"CRDS versée sur les minimas sociaux"
+
+        @dated_function(start = date(2009, 1, 1))
+        def function_2009_(self, simulation, period):
+            """
+            CRDS sur les minima sociaux
+            """
+            period = period.this_month
+            rsa_act = simulation.calculate('rsa_act', period)
+            taux_crds = simulation.legislation_at(period.start).fam.af.crds
+
+            return period, - taux_crds * rsa_act
+
+
+
+
+    class br_rmi(Reform.DatedVariable):
+        column = FloatCol
+        label = u"Base ressources du Rmi ou du Rsa"
+        reference = rsa.br_rmi
+
+        @dated_function(stop = date(2008, 12, 31)) #MODIFIED
+        def function_rmi(self, simulation, period):
+            period = period.this_month
+            br_rmi_pf = simulation.calculate('br_rmi_pf', period)
+            br_rmi_ms = simulation.calculate('br_rmi_ms', period)
+            br_rmi_i_holder = simulation.compute('br_rmi_i', period)
+
+            br_rmi_i_total = self.sum_by_entity(br_rmi_i_holder)
+            return period, br_rmi_pf + br_rmi_ms + br_rmi_i_total
+
+        @dated_function(start = date(2009, 1, 1))
+        def function_rsa(self, simulation, period):
+            period = period.this_month
+            br_rmi_pf = simulation.calculate('br_rmi_pf', period)
+            br_rmi_ms = simulation.calculate('br_rmi_ms', period)
+            br_rmi_i_holder = simulation.compute('br_rmi_i', period)
+            ra_rsa_i_holder = simulation.compute('ra_rsa_i', period)
+
+            br_rmi_i_total = self.sum_by_entity(br_rmi_i_holder)
+            ra_rsa_i_total = self.sum_by_entity(ra_rsa_i_holder)
+            return period, br_rmi_pf + br_rmi_ms + br_rmi_i_total + ra_rsa_i_total
+
+
+
+
+
+    class rsa_majore(Reform.DatedVariable):
+        label = u"Revenu de solidarité active - majoré"
+        reference = rsa.rsa_majore
+
+        @dated_function(start = date(2009, 01, 1))
+        def function(self, simulation, period):
+            period = period.this_month
+            rsa_socle_majore = simulation.calculate('rsa_socle_majore', period)
+            ra_rsa = simulation.calculate('ra_rsa', period)
+            rsa_forfait_logement = simulation.calculate('rsa_forfait_logement', period)
+            br_rmi = simulation.calculate('br_rmi', period)
+            P = simulation.legislation_at(period.start).minim.rmi
+
+            base_normalise = max_(rsa_socle_majore - rsa_forfait_logement - br_rmi + P.pente * ra_rsa, 0)
+
+            return period, base_normalise * (base_normalise >= P.rsa_nv)
+
+    class rsa_non_majore(Reform.DatedVariable):
+        column = FloatCol
+        label = u"Revenu de solidarité active - non majoré"
+        reference = rsa.rsa_non_majore
+
+        @dated_function(start = date(2009, 01, 1))
+        def function(self, simulation, period):
+            period = period.this_month
+            rsa_socle = simulation.calculate('rsa_socle', period)
+            ra_rsa = simulation.calculate('ra_rsa', period)
+            rsa_forfait_logement = simulation.calculate('rsa_forfait_logement', period)
+            br_rmi = simulation.calculate('br_rmi', period)
+            P = simulation.legislation_at(period.start).minim.rmi
+
+            base_normalise = max_(rsa_socle - rsa_forfait_logement - br_rmi + P.pente * ra_rsa, 0)
+
+            return period, base_normalise * (base_normalise >= P.rsa_nv)
+
+
+    class ra_rsa(Reform.Variable):
+        column = FloatCol
+        reference = rsa.ra_rsa
+        start_date = date(2009, 1, 1) #Changed
+
+        def function(self, simulation, period):
+            period = period.this_month
+            ra_rsa_i_holder = simulation.compute('ra_rsa_i', period)
+
+            ra_rsa = self.sum_by_entity(ra_rsa_i_holder)
+            return period, ra_rsa
+
+
+
+
+    class ra_rsa_i(Reform.Variable):
+        reference = rsa.ra_rsa_i
+        label = u"Revenus d'activité du Rsa - Individuel"
+        start_date = date(2009, 1, 1)
+
+        def function(self, simulation, period):
+            period = period.this_month
+
+            r = rsa_ressource_calculator(simulation, period)
+
+            salaire_net = r.calcule_ressource('salaire_net', revenu_pro = True)
+            indemnites_journalieres = r.calcule_ressource('indemnites_journalieres', revenu_pro = True)
+            indemnites_chomage_partiel = r.calcule_ressource('indemnites_chomage_partiel', revenu_pro = True)
+            indemnites_volontariat = r.calcule_ressource('indemnites_volontariat', revenu_pro = True)
+            revenus_stage_formation_pro = r.calcule_ressource('revenus_stage_formation_pro', revenu_pro = True)
+            indemnites_stage = r.calcule_ressource('indemnites_stage', revenu_pro = True)
+            bourse_recherche = r.calcule_ressource('bourse_recherche', revenu_pro = True)
+            hsup = r.calcule_ressource('hsup', revenu_pro = True)
+            etr = r.calcule_ressource('etr', revenu_pro = True)
+
+            # Ressources TNS
+
+            # WARNING : D'après les caisses, le revenu pris en compte pour les AE pour le RSA ne prend en compte que
+            # l'abattement standard sur le CA, mais pas les cotisations pour charges sociales. Dans l'attente d'une
+            # éventuelle correction, nous implémentons selon leurs instructions. Si changement, il suffira de remplacer le
+            # tns_auto_entrepreneur_benefice par tns_auto_entrepreneur_revenus_net
+            tns_auto_entrepreneur_revenus_rsa = r.calcule_ressource('tns_auto_entrepreneur_benefice', revenu_pro = True)
+
+            result = (
+                salaire_net + indemnites_journalieres + indemnites_chomage_partiel + indemnites_volontariat +
+                revenus_stage_formation_pro + indemnites_stage + bourse_recherche + hsup + etr +
+                tns_auto_entrepreneur_revenus_rsa
+            ) / 3
+
+            return period, result
+
+
+
+    class rsa_base_ressources_patrimoine_i(Reform.DatedVariable):
+        reference = rsa.rsa_base_ressources_patrimoine_i
+        label = u"Base de ressources des revenus du patrimoine du RSA"
+        start_date = date(2009, 1, 1)
+
+        @dated_function(start = date(2009, 1, 1))
+        def function_2009_(self, simulation, period):
+            period = period.this_month
+            interets_epargne_sur_livrets = simulation.calculate('interets_epargne_sur_livrets', period)
+            epargne_non_remuneree = simulation.calculate('epargne_non_remuneree', period)
+            revenus_capital = simulation.calculate('revenus_capital', period)
+            valeur_locative_immo_non_loue = simulation.calculate('valeur_locative_immo_non_loue', period)
+            valeur_locative_terrains_non_loue = simulation.calculate('valeur_locative_terrains_non_loue', period)
+            revenus_locatifs = simulation.calculate('revenus_locatifs', period)
+            rsa = simulation.legislation_at(period.start).minim.rmi
+
+            return period, (
+                interets_epargne_sur_livrets / 12 +
+                epargne_non_remuneree * rsa.patrimoine.taux_interet_forfaitaire_epargne_non_remunere / 12 +
+                revenus_capital +
+                valeur_locative_immo_non_loue * rsa.patrimoine.abattement_valeur_locative_immo_non_loue +
+                valeur_locative_terrains_non_loue * rsa.patrimoine.abattement_valeur_locative_terrains_non_loue +
+                revenus_locatifs
+                )
+
+
+
+
+    class rsa_socle_majore(Reform.Variable):
+        reference = rsa.rsa_socle_majore
+        label = u"Majoration pour parent isolé du Revenu de solidarité active socle"
+        start_date = date(2009, 1, 1)
+
+        def function(self, simulation, period):
+            period = period.this_month
+            rmi = simulation.legislation_at(period.start).minim.rmi
+            eligib = simulation.calculate('rsa_majore_eligibilite', period)
+            nbenf = simulation.calculate('nb_enfant_rsa', period)
+            taux = rmi.majo_rsa.pac0 + rmi.majo_rsa.pac_enf_sup * nbenf
+            return period, eligib * rmi.rmi * taux
+
+
+    class rsa_ressource_calculator:
+
+        def __init__(self, simulation, period):
+            self.period = period
+            self.simulation = simulation
+            self.three_previous_months = self.period.start.period('month', 3).offset(-3)
+            self.last_month = period.start.period('month').offset(-1)
+            self.has_ressources_substitution = (
+                simulation.calculate('chomage_net', period) +
+                simulation.calculate('indemnites_journalieres', period) +
+                simulation.calculate('retraite_nette', period)  # +
+                # simulation.calculate('ass', last_month)
+            ) > 0
+            self.neutral_max_forfaitaire = 3 * simulation.legislation_at(period.start).minim.rmi.rmi
+
+        def calcule_ressource(self, variable_name, revenu_pro = False):
+            ressource_trois_derniers_mois = self.simulation.calculate_add(variable_name, self.three_previous_months)
+            ressource_mois_courant = self.simulation.calculate(variable_name, self.period)
+            ressource_last_month = self.simulation.calculate(variable_name, self.last_month)
+
+            if revenu_pro:
+                condition = (
+                    (ressource_mois_courant == 0) *
+                    (ressource_last_month > 0) *
+                    not_(self.has_ressources_substitution)
+                )
+                return (1 - condition) * ressource_trois_derniers_mois
+            else:
+                condition = (
+                    (ressource_mois_courant == 0) *
+                    (ressource_last_month > 0)
+                )
+                return max_(0,
+                    ressource_trois_derniers_mois - condition * self.neutral_max_forfaitaire)
+
+
+
+
+###### On essaye de mensualiser toutes les aides sociales.
+
+
+
+
+    class ra_rsa_mensualise(Reform.Variable): #####Rsa mensuel au lieu de trimestriel
+        column = FloatCol
+        reference = rsa.ra_rsa
+        start_date = date(2009, 1, 1) #Changed
+
+        def function(self, simulation, period):
+            period = period.this_month
+            ra_rsa_i_holder = simulation.compute('ra_rsa_i_mensualise', period)
+
+            ra_rsa = self.sum_by_entity(ra_rsa_i_holder)
+            return period, ra_rsa
+
+
+
+
+    class ra_rsa_i_mensualise(Reform.Variable):
+        reference = rsa.ra_rsa_i
+        label = u"Revenus d'activité du Rsa - Individuel"
+        start_date = date(2009, 1, 1)
+
+        def function(self, simulation, period):
+            period = period.this_month
+
+            r = rsa_ressource_calculator_mensualise(simulation, period)
+
+            salaire_net = r.calcule_ressource('salaire_net', revenu_pro = True)
+            indemnites_journalieres = r.calcule_ressource('indemnites_journalieres', revenu_pro = True)
+            indemnites_chomage_partiel = r.calcule_ressource('indemnites_chomage_partiel', revenu_pro = True)
+            indemnites_volontariat = r.calcule_ressource('indemnites_volontariat', revenu_pro = True)
+            revenus_stage_formation_pro = r.calcule_ressource('revenus_stage_formation_pro', revenu_pro = True)
+            indemnites_stage = r.calcule_ressource('indemnites_stage', revenu_pro = True)
+            bourse_recherche = r.calcule_ressource('bourse_recherche', revenu_pro = True)
+            hsup = r.calcule_ressource('hsup', revenu_pro = True)
+            etr = r.calcule_ressource('etr', revenu_pro = True)
+
+            # Ressources TNS
+
+            # WARNING : D'après les caisses, le revenu pris en compte pour les AE pour le RSA ne prend en compte que
+            # l'abattement standard sur le CA, mais pas les cotisations pour charges sociales. Dans l'attente d'une
+            # éventuelle correction, nous implémentons selon leurs instructions. Si changement, il suffira de remplacer le
+            # tns_auto_entrepreneur_benefice par tns_auto_entrepreneur_revenus_net
+            tns_auto_entrepreneur_revenus_rsa = r.calcule_ressource('tns_auto_entrepreneur_benefice', revenu_pro = True)
+
+            result = (
+                salaire_net + indemnites_journalieres + indemnites_chomage_partiel + indemnites_volontariat +
+                revenus_stage_formation_pro + indemnites_stage + bourse_recherche + hsup + etr +
+                tns_auto_entrepreneur_revenus_rsa
+            ) #/ 3
+
+            return period, result
+
+
+
+    class rsa_base_ressources_patrimoine_i_mensualise(Reform.DatedVariable):
+        reference = rsa.rsa_base_ressources_patrimoine_i
+        label = u"Base de ressources des revenus du patrimoine du RSA"
+        start_date = date(2009, 1, 1)
+
+        @dated_function(start = date(2009, 1, 1))
+        def function_2009_(self, simulation, period):
+            period = period.this_month
+            interets_epargne_sur_livrets = simulation.calculate('interets_epargne_sur_livrets', period)
+            epargne_non_remuneree = simulation.calculate('epargne_non_remuneree', period)
+            revenus_capital = simulation.calculate('revenus_capital', period)
+            valeur_locative_immo_non_loue = simulation.calculate('valeur_locative_immo_non_loue', period)
+            valeur_locative_terrains_non_loue = simulation.calculate('valeur_locative_terrains_non_loue', period)
+            revenus_locatifs = simulation.calculate('revenus_locatifs', period)
+            rsa = simulation.legislation_at(period.start).minim.rmi
+
+            return period, (
+                interets_epargne_sur_livrets / 12 +
+                epargne_non_remuneree * rsa.patrimoine.taux_interet_forfaitaire_epargne_non_remunere / 12 +
+                revenus_capital +
+                valeur_locative_immo_non_loue * rsa.patrimoine.abattement_valeur_locative_immo_non_loue +
+                valeur_locative_terrains_non_loue * rsa.patrimoine.abattement_valeur_locative_terrains_non_loue +
+                revenus_locatifs
+                )
+
+
+
+
+    class rsa_non_majore_mensualise(Reform.DatedVariable):
+        reference = rsa.rsa_non_majore
+        label = u"Revenu de solidarité active - non majoré"
+        entity_class = Familles
+
+        @dated_function(start = date(2009, 01, 1))
+        def function(self, simulation, period):
+            period = period.this_month
+            rsa_socle = simulation.calculate('rsa_socle', period) #already on monthly basis
+            ra_rsa = simulation.calculate('ra_rsa_mensualise', period)
+            rsa_forfait_logement = simulation.calculate('rsa_forfait_logement', period) #TODO : mensualize
+            br_rmi = simulation.calculate('br_rmi', period)
+            P = simulation.legislation_at(period.start).minim.rmi
+
+            base_normalise = max_(rsa_socle - rsa_forfait_logement - br_rmi + P.pente * ra_rsa, 0)
+
+            return period, base_normalise * (base_normalise >= P.rsa_nv)
+
+
+
+
+    class rsa_socle_majore_mensualise(Reform.Variable):
+        reference = rsa.rsa_socle_majore
+        label = u"Majoration pour parent isolé du Revenu de solidarité active socle"
+        start_date = date(2009, 1, 1)
+
+        def function(self, simulation, period):
+            period = period.this_month
+            rmi = simulation.legislation_at(period.start).minim.rmi
+            eligib = simulation.calculate('rsa_majore_eligibilite', period) #already on monthly basis
+            nbenf = simulation.calculate('nb_enfant_rsa', period.this_year.this_month)
+            taux = rmi.majo_rsa.pac0 + rmi.majo_rsa.pac_enf_sup * nbenf
+            return period, eligib * rmi.rmi * taux
+
+    class rsa_majore_mensualise(Reform.DatedVariable):
+        column = FloatCol
+        label = u"Revenu de solidarité active - majoré"
+        reference = rsa.rsa_majore
+
+        @dated_function(start = date(2009, 01, 1))
+        def function(self, simulation, period):
+            period = period.this_month
+            rsa_socle_majore = simulation.calculate('rsa_socle_majore_mensualise', period)
+            ra_rsa = simulation.calculate('ra_rsa_mensualise', period)
+            rsa_forfait_logement = simulation.calculate('rsa_forfait_logement', period) #TODO: mensualize
+            br_rmi = simulation.calculate('br_rmi', period)
+            P = simulation.legislation_at(period.start).minim.rmi
+
+            base_normalise = max_(rsa_socle_majore - rsa_forfait_logement - br_rmi + P.pente * ra_rsa, 0)
+
+            return period, base_normalise * (base_normalise >= P.rsa_nv)
+
+
+    class rsa_mensuel(Reform.DatedVariable):
+     #calculate_output = calculate_output_add #TODO : uncomment ? Warning !
+     column = FloatCol
+     label = u"Revenu de solidarité active"
+     entity_class = Familles
+
+     @dated_function(start = date(2009, 01, 1))
+     def function(self, simulation, period):
+         period = period.this_month
+         rsa_majore = simulation.calculate_add('rsa_majore_mensualise', period) #TODO: mensualize
+         rsa_non_majore = simulation.calculate_add('rsa_non_majore_mensualise', period)
+         #rsa_non_calculable = simulation.calculate_add('rsa_non_calculable_mensualise', period)
+
+         rsa = max_(rsa_majore, rsa_non_majore) #rsa_non_calculable égal à zero
+
+         return period, rsa
+
+
+    class rsa_ressource_calculator_mensualise:
+
+        def __init__(self, simulation, period):
+            self.period = period.this_month
+            self.simulation = simulation
+            self.three_previous_months = self.period.start.period('month', 3).offset(-3)
+            self.last_month = period.start.period('month').offset(-1)
+            self.has_ressources_substitution = (
+                simulation.calculate('chomage_net', period) +
+                simulation.calculate('indemnites_journalieres', period) +
+                simulation.calculate('retraite_nette', period)  # +
+                # simulation.calculate('ass', last_month)
+            ) > 0
+            self.neutral_max_forfaitaire =  simulation.legislation_at(period.start).minim.rmi.rmi # 3 *
+
+        def calcule_ressource(self, variable_name, revenu_pro = False):
+            ressource_trois_derniers_mois = self.simulation.calculate_add(variable_name, self.three_previous_months)
+            ressource_mois_courant = self.simulation.calculate(variable_name, self.period)
+            ressource_last_month = self.simulation.calculate(variable_name, self.last_month)
+
+            if revenu_pro:
+                condition = (
+                    (ressource_mois_courant == 0) *
+                    (ressource_last_month > 0) *
+                    not_(self.has_ressources_substitution)
+                )
+                return ressource_mois_courant ##
+            else:
+                condition = (
+                    (ressource_mois_courant == 0) *
+                    (ressource_last_month > 0)
+                )
+                return max_(0,
+                    ressource_trois_derniers_mois - condition * self.neutral_max_forfaitaire)
+
+
+
+
+
+
+
+
+
+
+#### Outils ####
+
+    class decote_menage(Reform.Variable):
+        reference = mesures.revdisp
+        label = u"Revenu disponible du ménage"
+        url = "http://fr.wikipedia.org/wiki/Revenu_disponible"
+
+        def function(self, simulation, period):
+            '''
+            Revenu disponible - ménage
+            'men'
+            '''
+            period = period.this_year
+            decote_holder = simulation.compute('decote_gain_fiscal', period)
+            decote = self.cast_from_entity_to_role(decote_holder, role = VOUS)
+            decote = self.sum_by_entity(decote)
+
+            return period, decote
+    class decote_mensuel_menage(Reform.Variable):
+        reference = mesures.revdisp
+        label = u"Revenu disponible du ménage"
+        url = "http://fr.wikipedia.org/wiki/Revenu_disponible"
+
+        def function(self, simulation, period):
+            '''
+            Revenu disponible - ménage
+            'men'
+            '''
+            period = period.this_month
+            decote_holder = simulation.compute('decote_gain_fiscal_mensuel_times_12', period)
+            decote = self.cast_from_entity_to_role(decote_holder, role = VOUS)
+            decote = self.sum_by_entity(decote)/12
+
+            return period, decote
 
 
 

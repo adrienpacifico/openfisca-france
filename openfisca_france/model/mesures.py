@@ -319,9 +319,9 @@ class psoc(Variable):
         Prestations sociales
         '''
         period = period.this_year
-        pfam = simulation.calculate('pfam', period)
-        mini = simulation.calculate('mini', period)
-        aides_logement = simulation.calculate('aides_logement', period)
+        pfam = simulation.calculate_add('pfam', period)
+        mini = simulation.calculate_add('mini', period)
+        aides_logement = simulation.calculate_add('aides_logement', period)
 
         return period, pfam + mini + aides_logement
 
